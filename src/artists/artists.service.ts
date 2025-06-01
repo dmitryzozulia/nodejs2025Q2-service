@@ -2,12 +2,14 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { Artist } from './entities/artist.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { TrackService } from '../track/track.service';
-//import { AlbumService } from '../album/album.service';
+import { AlbumsService } from '../albums/albums.service';
 
 @Injectable()
 export class ArtistsService {
   constructor(
     @Inject(forwardRef(() => TrackService)) private trackService: TrackService,
+    @Inject(forwardRef(() => AlbumsService))
+    private albumsService: AlbumsService,
   ) {}
 
   artists: Artist[] = [
@@ -63,6 +65,11 @@ export class ArtistsService {
     this.trackService.tracks.forEach((track) => {
       if (track.artistId === id) {
         track.artistId = null;
+      }
+    });
+    this.albumsService.albums.forEach((album) => {
+      if (album.artistId === id) {
+        album.artistId = null;
       }
     });
     this.artists.splice(index, 1);
