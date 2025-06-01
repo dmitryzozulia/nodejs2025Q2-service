@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { TrackModule } from './track/track.module';
+import { ArtistsModule } from './artists/artists.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { TrackModule } from './track/track.module';
     }),
     UserModule,
     TrackModule,
+    ArtistsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
