@@ -70,3 +70,25 @@ npm run format
 Press <kbd>F5</kbd> to debug.
 
 For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+
+### Run with Docker (recommended)
+
+1. Make sure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
+2. Clone the repository and navigate to the project folder.
+3. Create a `.env` file in the project root (example content):
+   ```
+   PORT=4000
+   POSTGRES_DB=homelibrary
+   POSTGRES_USER=user
+   POSTGRES_PASSWORD=password
+   DATABASE_URL=postgres://user:password@db:5432/homelibrary
+   ```
+4. Build and start the containers:
+   ```
+   docker compose up --build
+   ```
+5. The app will be available at [http://localhost:4000](http://localhost:4000)
+6. To stop the containers:
+   ```
+   docker compose down
+   ```
