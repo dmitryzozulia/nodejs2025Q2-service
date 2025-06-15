@@ -20,86 +20,113 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  getAllUsers() {
-    return this.userService.findAll();
+  async getAllUsers(@Res() res: Response) {
+    try {
+      const users = await this.userService.findAll();
+      return res.status(HttpStatus.OK).json(users);
+    } catch (err) {
+      console.error(err);
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Internal server error' });
+    }
   }
 
   @Get(':id')
-  getUserById(@Param('id') id: string, @Res() res: Response) {
-    if (!isUUID(id)) {
-      return res
-        .status(HttpStatus.BAD_REQUEST)
-        .json({ message: 'Invalid userId' });
+  async getUserById(@Param('id') id: string, @Res() res: Response) {
+    try {
+      if (!isUUID(id)) {
+        return res.status(400).json({ message: 'Invalid userId' });
+      }
+      const user = await this.userService.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      return res.status(200).json(user);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-    const user = this.userService.findById(id);
-    if (!user) {
-      return res
-        .status(HttpStatus.NOT_FOUND)
-        .json({ message: 'User not found' });
-    }
-    return res.status(HttpStatus.OK).json(user);
   }
 
   @Post()
-  createUser(@Body() body: CreateUserDto, @Res() res: Response) {
-    const { login, password } = body;
-    if (!login || !password) {
-      return res
-        .status(HttpStatus.BAD_REQUEST)
-        .json({ message: 'login and password are required' });
+  async createUser(@Body() body: CreateUserDto, @Res() res: Response) {
+    try {
+      const { login, password } = body;
+      if (
+        !login ||
+        !password ||
+        typeof login !== 'string' ||
+        typeof password !== 'string'
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'login and password are required' });
+      }
+      const user = await this.userService.createUser(login, password);
+      return res.status(201).json(user);
+    } catch (err: any) {
+      if (err.code === '23505') {
+        return res
+          .status(400)
+          .json({ message: 'User with this login already exists' });
+      }
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-    const user = this.userService.createUser(login, password);
-    return res.status(HttpStatus.CREATED).json(user);
   }
-
   @Put(':id')
-  updatePassword(
+  async updatePassword(
     @Param('id') id: string,
     @Body() body: UpdatePasswordDto,
     @Res() res: Response,
   ) {
-    if (!isUUID(id)) {
-      return res
-        .status(HttpStatus.BAD_REQUEST)
-        .json({ message: 'Invalid userId' });
+    try {
+      if (!isUUID(id)) {
+        return res.status(400).json({ message: 'Invalid userId' });
+      }
+      const { oldPassword, newPassword } = body;
+      if (
+        !oldPassword ||
+        !newPassword ||
+        typeof oldPassword !== 'string' ||
+        typeof newPassword !== 'string'
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'oldPassword and newPassword are required' });
+      }
+      const result = await this.userService.updatePassword(
+        id,
+        oldPassword,
+        newPassword,
+      );
+      if (result === 'not_found') {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      if (result === 'forbidden') {
+        return res.status(403).json({ message: 'Old password is wrong' });
+      }
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-    const { oldPassword, newPassword } = body;
-    if (!oldPassword || !newPassword) {
-      return res
-        .status(HttpStatus.BAD_REQUEST)
-        .json({ message: 'oldPassword and newPassword are required' });
-    }
-    const result = this.userService.updatePassword(
-      id,
-      oldPassword,
-      newPassword,
-    );
-    if (result === 'not_found') {
-      return res
-        .status(HttpStatus.NOT_FOUND)
-        .json({ message: 'User not found' });
-    }
-    if (result === 'forbidden') {
-      return res
-        .status(HttpStatus.FORBIDDEN)
-        .json({ message: 'Old password is wrong' });
-    }
-    return res.status(HttpStatus.OK).json(result);
   }
-
   @Delete(':id')
-  deleteUser(@Param('id') id: string, @Res() res: Response) {
-    if (!isUUID(id)) {
-      return res
-        .status(HttpStatus.BAD_REQUEST)
-        .json({ message: 'Invalid userId' });
+  async deleteUser(@Param('id') id: string, @Res() res: Response) {
+    try {
+      if (!isUUID(id)) {
+        return res.status(400).json({ message: 'Invalid userId' });
+      }
+      const deleted = await this.userService.deleteUser(id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      return res.status(204).send();
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-    const deleted = this.userService.deleteUser(id);
-    if (!deleted) {
-      return res
-        .status(HttpStatus.NOT_FOUND)
-        .json({ message: 'User not found' });
-    }
-    return res.status(HttpStatus.NO_CONTENT).send();
   }
 }
