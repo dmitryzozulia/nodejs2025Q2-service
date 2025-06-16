@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthDto } from './dto/auth.dto';
 import { RefreshDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
+import { TokenExpiredError } from 'jsonwebtoken';
 
 export interface Payload {
   userId: string;
@@ -87,7 +88,10 @@ export class AuthService {
     try {
       const [accessToken, refreshToken] = await this.verifyRefreshToken(token);
       return { accessToken, refreshToken };
-    } catch {
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        throw new HttpException('Refresh token expired', HttpStatus.FORBIDDEN);
+      }
       throw new HttpException('Invalid refresh token', HttpStatus.FORBIDDEN);
     }
   }
