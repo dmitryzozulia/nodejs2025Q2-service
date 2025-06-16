@@ -4,9 +4,14 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AuthService } from './auth/auth.service';
+import { LoggingService } from './logging/logging.service';
+import { AllExceptionsFilter } from './logging/exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const loggingService = app.get(LoggingService);
+
+  app.useGlobalFilters(new AllExceptionsFilter(loggingService));
 
   app.useGlobalPipes(new ValidationPipe());
   const authService = app.get(AuthService);
